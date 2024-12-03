@@ -1,5 +1,8 @@
 # EmbedPhoto Exporter
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![NPM Version](https://img.shields.io/npm/v/npm.svg?style=flat)]()
+
 ## Overview
 
 EmbedPhoto Exporter is an ![Obsidian](https://obsidian.md/) plugin that allows you to easily embed images in your Markdown notes as base64, making your notes fully portable and self-contained.
@@ -67,7 +70,3 @@ Some text with an image.
 ## Support
 
 If you encounter any issues or have suggestions, please [open an issue](https://github.com/KimBlazter/obsidian-image-embedder/issues) on GitHub.
-
-## License
-
-[MIT License](LICENSE)
