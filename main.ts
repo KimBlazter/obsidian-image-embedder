@@ -1,78 +1,90 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
+import * as fs from 'fs';
+import * as path from 'path';
 
-// Remember to rename these classes and interfaces!
-
-interface MyPluginSettings {
-	mySetting: string;
+interface PluginSettings {
+	exportPath: string;
 }
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default'
+const DEFAULT_SETTINGS: PluginSettings = {
+	exportPath: '/Documents'
 }
 
 export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+	settings: PluginSettings;
 
+	registerCommands() {
+		this.addCommand({
+			id: "export-current-file",
+			name: "Export file with pictures",
+			callback: async () => {
+				const activeNote = this.app.workspace.getActiveFile();
+				if(activeNote) {
+					const newContent = await this.replaceImagesWithBase64(activeNote);
+					await this.saveFile(newContent, activeNote.basename + ".md");
+					new Notice(`Note \"${activeNote.basename}\" has been exported to ${this.settings.exportPath}`)
+				} else {
+					new Notice('No note is currently open');
+				}
+			}
+		})
+
+		this.addCommand({
+			id: "flatten-current-file",
+			name: "Flatten Embedded Images",
+			callback: async () => {
+				const activeNote = this.app.workspace.getActiveFile();
+				if(activeNote) {
+					const newContent = await this.replaceImagesWithBase64(activeNote);
+					
+					// Replacing content
+					this.app.vault.modify(activeNote, newContent);
+
+					new Notice(`Note \"${activeNote.basename}\" has been flattened`)
+				} else {
+					new Notice('No note is currently open');
+				}
+			}
+		})
+	}
+
+	
 	async onload() {
 		await this.loadSettings();
 
-		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('dice', 'Sample Plugin', (evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
-		});
-		// Perform additional things with the ribbon
-		ribbonIconEl.addClass('my-plugin-ribbon-class');
+		this.registerCommands();
 
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status Bar Text');
-
-		// This adds a simple command that can be triggered anywhere
-		this.addCommand({
-			id: 'open-sample-modal-simple',
-			name: 'Open sample modal (simple)',
-			callback: () => {
-				new SampleModal(this.app).open();
-			}
-		});
 		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'sample-editor-command',
-			name: 'Sample editor command',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				console.log(editor.getSelection());
-				editor.replaceSelection('Sample Editor Command');
-			}
-		});
+		// this.addCommand({
+		// 	id: 'sample-editor-command',
+		// 	name: 'Sample editor command',
+		// 	editorCallback: (editor: Editor, view: MarkdownView) => {
+		// 		console.log(editor.getSelection());
+		// 		editor.replaceSelection('Sample Editor Command');
+		// 	}
+		// });
 		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-sample-modal-complex',
-			name: 'Open sample modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
+		// this.addCommand({
+		// 	id: 'open-sample-modal-complex',
+		// 	name: 'Open sample modal (complex)',
+		// 	checkCallback: (checking: boolean) => {
+		// 		// Conditions to check
+		// 		const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
+		// 		if (markdownView) {
+		// 			// If checking is true, we're simply "checking" if the command can be run.
+		// 			// If checking is false, then we want to actually perform the operation.
+		// 			if (!checking) {
+		// 				new SampleModal(this.app).open();
+		// 			}
 
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
-			}
-		});
+		// 			// This command will only show up in Command Palette when the check function returns true
+		// 			return true;
+		// 		}
+		// 	}
+		// });
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new SampleSettingTab(this.app, this));
-
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			console.log('click', evt);
-		});
 
 		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
 		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
@@ -89,21 +101,65 @@ export default class MyPlugin extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
-}
 
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
+	async replaceImagesWithBase64(note: TFile) {
+		let content = await this.app.vault.read(note);
+		const imageRegex = /!\[\[([^\]]+)\]\]/g;
+		
+		const replacements = [];
+		
+		for (const match of content.matchAll(imageRegex)) {
+			const imageName = match[1];
+			const imageFile = this.app.vault.getFiles().find(file => file.name === imageName);
+			
+			if (imageFile) {
+				const imageBuffer = await this.app.vault.readBinary(imageFile);
+				const base64Image = btoa(
+					String.fromCharCode.apply(null, new Uint8Array(imageBuffer))
+				);
+				
+				const mimeType = this.getMimeType(imageFile.extension);
+				const base64Src = `data:${mimeType};base64,${base64Image}`;
+				
+				replacements.push({
+					original: match[0],
+					base64: `![${imageName}](${base64Src})`
+				});
+			}
+		}
+		
+		for (const replacement of replacements) {
+			content = content.replace(replacement.original, replacement.base64);
+		}
+		
+		return content;
 	}
 
-	onOpen() {
-		const {contentEl} = this;
-		contentEl.setText('Woah!');
+	getMimeType(extension: string): string {
+		const mimeTypes: Record<string, string> = {
+			'jpg': 'image/jpeg',
+			'jpeg': 'image/jpeg',
+			'png': 'image/png',
+			'gif': 'image/gif',
+			'svg': 'image/svg+xml',
+			'webp': 'image/webp'
+		};
+		return mimeTypes[extension.toLowerCase()] ?? 'application/octet-stream';
 	}
 
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
+	async saveFile(content: string, fileName: string) {
+		const exportPath = this.settings.exportPath || path.join(
+			require('os').homedir(), 
+			'ObsidianExports'
+		);
+	
+		// Ensure directory exists
+		if (!fs.existsSync(exportPath)) {
+			fs.mkdirSync(exportPath, { recursive: true });
+		}
+	
+		const fullPath = path.join(exportPath, fileName);
+		fs.writeFileSync(fullPath, content, 'utf-8');
 	}
 }
 
@@ -121,13 +177,12 @@ class SampleSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName('Setting #1')
-			.setDesc('It\'s a secret')
+			.setName('Export path')
 			.addText(text => text
-				.setPlaceholder('Enter your secret')
-				.setValue(this.plugin.settings.mySetting)
+				.setPlaceholder('')
+				.setValue(this.plugin.settings.exportPath)
 				.onChange(async (value) => {
-					this.plugin.settings.mySetting = value;
+					this.plugin.settings.exportPath = value;
 					await this.plugin.saveSettings();
 				}));
 	}
