@@ -70,3 +70,5 @@ Some text with an image.
 ## Support
 
 If you encounter any issues or have suggestions, please [open an issue](https://github.com/KimBlazter/obsidian-image-embedder/issues) on GitHub.
+
+[![BUY ME A COFFEE](https://img.shields.io/badge/Buy_Me_A_Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/martinsaunier)

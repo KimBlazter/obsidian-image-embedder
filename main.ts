@@ -15,7 +15,7 @@ export default class MyPlugin extends Plugin {
 
 	registerCommands() {
 		this.addCommand({
-			id: "export-current-file",
+			id: "export-current-note",
 			name: "Export file with pictures",
 			callback: async () => {
 				const activeNote = this.app.workspace.getActiveFile();
@@ -30,7 +30,7 @@ export default class MyPlugin extends Plugin {
 		})
 
 		this.addCommand({
-			id: "flatten-current-file",
+			id: "flatten-current-note",
 			name: "Flatten Embedded Images",
 			callback: async () => {
 				const activeNote = this.app.workspace.getActiveFile();

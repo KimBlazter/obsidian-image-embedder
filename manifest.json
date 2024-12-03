@@ -5,7 +5,6 @@
 	"minAppVersion": "0.15.0",
 	"description": "Export Markdown files with images embedded as base64, ensuring complete portability of your notes and attachments.",
 	"author": "Martin Saunier",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
-	"isDesktopOnly": false
+	"fundingUrl": "https://buymeacoffee.com/martinsaunier",
+	"isDesktopOnly": true
 }
