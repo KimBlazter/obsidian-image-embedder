@@ -1,6 +1,7 @@
 import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
 import * as fs from 'fs';
 import * as path from 'path';
+import { arrayBuffer } from 'stream/consumers';
 
 interface PluginSettings {
 	exportPath: string;
@@ -91,7 +92,7 @@ export default class MyPlugin extends Plugin {
 	}
 
 	onunload() {
-
+		// Nothing
 	}
 
 	async loadSettings() {
@@ -113,18 +114,23 @@ export default class MyPlugin extends Plugin {
 			const imageFile = this.app.vault.getFiles().find(file => file.name === imageName);
 			
 			if (imageFile) {
-				const imageBuffer = await this.app.vault.readBinary(imageFile);
-				const base64Image = btoa(
-					String.fromCharCode.apply(null, new Uint8Array(imageBuffer))
-				);
+				try {
+					const arrayBuffer = await this.app.vault.readBinary(imageFile);
+
+					const base64Image = Buffer.from(arrayBuffer).toString('base64');
+					
+					const mimeType = this.getMimeType(imageFile.extension);
+					const base64Src = `data:${mimeType};base64,${base64Image}`;
+					
+					replacements.push({
+						original: match[0],
+						base64: `![${imageName}](${base64Src})`
+					});
+				} catch(error) {
+					console.error(`Failed to process image ${imageName}:`, error);
+					new Notice("Failed to process image")
+				}
 				
-				const mimeType = this.getMimeType(imageFile.extension);
-				const base64Src = `data:${mimeType};base64,${base64Image}`;
-				
-				replacements.push({
-					original: match[0],
-					base64: `![${imageName}](${base64Src})`
-				});
 			}
 		}
 		
