@@ -62,6 +62,14 @@ Some text with an image.
 ![my-image.png](data:image/png;base64,...)
 ```
 
+## Supported Image Formats
+The plugin supports the following image formats:
+- `JPEG/JPG`
+- `PNG`
+- `GIF`
+- `SVG`
+- `WebP`
+
 ## Compatibility
 
 - Obsidian `v0.15.0` and above
