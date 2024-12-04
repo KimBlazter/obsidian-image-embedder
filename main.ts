@@ -1,7 +1,6 @@
 import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
 import * as fs from 'fs';
 import * as path from 'path';
-import { arrayBuffer } from 'stream/consumers';
 
 interface PluginSettings {
 	exportPath: string;
@@ -11,7 +10,7 @@ const DEFAULT_SETTINGS: PluginSettings = {
 	exportPath: '/Documents'
 }
 
-export default class MyPlugin extends Plugin {
+export default class EmbedPhotoExporterPlugin extends Plugin {
 	settings: PluginSettings;
 
 	registerCommands() {
@@ -85,7 +84,7 @@ export default class MyPlugin extends Plugin {
 		// });
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+		this.addSettingTab(new EmbedPhotoExporterSettingTab(this.app, this));
 
 		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
 		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
@@ -169,10 +168,10 @@ export default class MyPlugin extends Plugin {
 	}
 }
 
-class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+class EmbedPhotoExporterSettingTab extends PluginSettingTab {
+	plugin: EmbedPhotoExporterPlugin;
 
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: App, plugin: EmbedPhotoExporterPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
